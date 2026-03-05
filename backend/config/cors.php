@@ -16,7 +16,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-'allowed_origins' => ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000', 'https://test.censa.edu.cu'],
+'allowed_origins' => ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000', 'https://test.censa.edu.cu', 'http://test.censa.edu.cu'],
 
     'allowed_origins_patterns' => [],
 
