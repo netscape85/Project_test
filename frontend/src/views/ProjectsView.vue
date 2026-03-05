@@ -1,26 +1,7 @@
 <template>
   <v-app>
-    <v-app-bar color="primary" dark>
-      <v-app-bar-title>TCG Engineering Hub</v-app-bar-title>
-      <v-spacer></v-spacer>
-      <v-btn icon @click="logout">
-        <v-icon>mdi-logout</v-icon>
-      </v-btn>
-    </v-app-bar>
-
-    <v-navigation-drawer v-model="drawer" app>
-      <v-list dense>
-        <v-list-item prepend-icon="mdi-folder" title="Projects" to="/projects"></v-list-item>
-        <v-list-item v-if="canManageArtifacts" prepend-icon="mdi-file-document" title="Artifacts" to="/artifacts"></v-list-item>
-        <v-list-item v-if="canManageModules" prepend-icon="mdi-code-braces" title="Modules" to="/modules"></v-list-item>
-      </v-list>
-      <template v-slot:append>
-        <div class="pa-2">
-          <v-chip>{{ user?.name }}</v-chip>
-          <v-chip color="secondary" class="ml-2">{{ user?.role }}</v-chip>
-        </div>
-      </template>
-    </v-navigation-drawer>
+    <AppToolbar @toggle-drawer="drawer = !drawer" />
+    <AppSidebar v-model="drawer" />
 
     <v-main class="bg-grey-lighten-4">
       <v-container>
@@ -155,6 +136,8 @@
         </v-dialog>
       </v-container>
     </v-main>
+    
+    <AppFooter />
   </v-app>
 </template>
 
@@ -163,9 +146,12 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
 import api from '@/plugins/api';
+import AppToolbar from '@/components/AppToolbar.vue';
+import AppSidebar from '@/components/AppSidebar.vue';
+import AppFooter from '@/components/AppFooter.vue';
 
 const router = useRouter();
-const { user, isAdmin, isPM, logout: authLogout } = useAuth();
+const { isAdmin, isPM } = useAuth();
 
 const drawer = ref(true);
 const projects = ref([]);
@@ -193,8 +179,6 @@ const statusOptions = [
 const canCreateProjects = computed(() => isAdmin.value || isPM.value);
 const canEditProjects = computed(() => isAdmin.value || isPM.value);
 const canDeleteProjects = computed(() => isAdmin.value);
-const canManageArtifacts = computed(() => isAdmin.value || isPM.value);
-const canManageModules = computed(() => isAdmin.value || isPM.value || true);
 
 const fetchProjects = async () => {
   loading.value = true;
@@ -289,11 +273,6 @@ const deleteProject = async () => {
   } catch (err) {
     console.error('Failed to delete project:', err);
   }
-};
-
-const logout = async () => {
-  await authLogout();
-  router.push('/login');
 };
 
 onMounted(() => {

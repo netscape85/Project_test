@@ -29,7 +29,7 @@ class ProjectController extends Controller
             'params' => $request->all()
         ]);
 
-        $query = Project::query();
+        $query = Project::with('creator:id,name,email');
 
         // Filter by status
         if ($request->has('status')) {
@@ -240,6 +240,46 @@ class ProjectController extends Controller
     }
 
     /**
+     * Export project to JSON
+     */
+    public function export(Project $project): JsonResponse
+    {
+        Gate::authorize('view', $project);
+
+        $data = [
+            'project' => $project->only(['name', 'client_name', 'status', 'created_at']),
+            'artifacts' => $project->artifacts()->get()->map(function ($artifact) {
+                return [
+                    'type' => $artifact->type,
+                    'status' => $artifact->status,
+                    'content_json' => $artifact->content_json,
+                    'owner' => $artifact->owner ? $artifact->owner->only(['name', 'email']) : null,
+                ];
+            }),
+            'modules' => $project->modules()->get()->map(function ($module) {
+                return [
+                    'name' => $module->name,
+                    'domain' => $module->domain,
+                    'status' => $module->status,
+                    'objective' => $module->objective,
+                    'inputs' => $module->inputs,
+                    'outputs' => $module->outputs,
+                    'data_structure' => $module->data_structure,
+                    'logic_rules' => $module->logic_rules,
+                    'responsibility' => $module->responsibility,
+                    'failure_scenarios' => $module->failure_scenarios,
+                    'audit_trail_requirements' => $module->audit_trail_requirements,
+                    'dependencies' => $module->dependencies,
+                    'version_note' => $module->version_note,
+                ];
+            }),
+            'exported_at' => now()->toIso8601String(),
+        ];
+
+        return response()->json($data);
+    }
+
+    /**
      * Restore a deleted project
      */
     public function restore(Request $request, int $id): JsonResponse
@@ -265,4 +305,3 @@ class ProjectController extends Controller
         ]);
     }
 }
-

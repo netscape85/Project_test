@@ -1,28 +1,7 @@
 <template>
   <v-app>
-    <v-app-bar color="primary" dark>
-      <v-btn icon @click="goBack">
-        <v-icon>mdi-arrow-left</v-icon>
-      </v-btn>
-      <v-app-bar-title>Users Management</v-app-bar-title>
-      <v-spacer></v-spacer>
-      <v-btn icon @click="logout">
-        <v-icon>mdi-logout</v-icon>
-      </v-btn>
-    </v-app-bar>
-
-    <v-navigation-drawer v-model="drawer" app>
-      <v-list dense>
-        <v-list-item prepend-icon="mdi-folder" title="Projects" to="/projects"></v-list-item>
-        <v-list-item prepend-icon="mdi-account-group" title="Users" to="/users"></v-list-item>
-      </v-list>
-      <template v-slot:append>
-        <div class="pa-2">
-          <v-chip>{{ user?.name }}</v-chip>
-          <v-chip color="secondary" class="ml-2">{{ user?.role }}</v-chip>
-        </div>
-      </template>
-    </v-navigation-drawer>
+    <AppToolbar @toggle-drawer="drawer = !drawer" />
+    <AppSidebar v-model="drawer" />
 
     <v-main>
       <v-container>
@@ -92,15 +71,20 @@
             </template>
             
             <template v-slot:item.actions="{ item }">
-              <v-btn icon size="small" @click="openEditDialog(item)">
+              <v-btn 
+                v-if="canEditUser(item)"
+                icon 
+                size="small" 
+                @click="openEditDialog(item)"
+              >
                 <v-icon>mdi-pencil</v-icon>
               </v-btn>
               <v-btn 
+                v-if="canDeleteUser(item)"
                 icon 
                 size="small" 
                 color="error"
                 @click="confirmDelete(item)"
-                :disabled="!canDeleteUsers || item.id === user?.id"
               >
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
@@ -109,6 +93,8 @@
         </v-card>
       </v-container>
     </v-main>
+    
+    <AppFooter />
 
     <!-- Create/Edit User Dialog -->
     <v-dialog v-model="showUserDialog" max-width="500" :key="editingUser?.id || 'new'">
@@ -191,13 +177,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
 import { useAuth } from '@/composables/useAuth';
 import api from '@/plugins/api';
+import AppToolbar from '@/components/AppToolbar.vue';
+import AppSidebar from '@/components/AppSidebar.vue';
+import AppFooter from '@/components/AppFooter.vue';
 
-const router = useRouter();
-const { user, isAdmin, isPM, logout: authLogout } = useAuth();
+const { user, isAdmin, isPM } = useAuth();
 
 const drawer = ref(true);
 const loading = ref(false);
@@ -241,8 +228,18 @@ const roleOptions = [
 
 // Permissions
 const canCreateUsers = computed(() => isAdmin.value);
-const canDeleteUsers = computed(() => isAdmin.value || isPM.value);
 const canChangeRole = computed(() => isAdmin.value);
+
+// Check if current user can edit a specific user
+const canEditUser = (targetUser) => {
+  return isAdmin.value;
+};
+
+// Check if current user can delete a specific user
+const canDeleteUser = (targetUser) => {
+  if (targetUser.id === user.value?.id) return false;
+  return isAdmin.value;
+};
 
 // Debounced search
 let searchTimeout = null;
@@ -310,9 +307,6 @@ const formatDate = (date) => {
     day: 'numeric'
   });
 };
-
-const goBack = () => router.push('/projects');
-const logout = () => { authLogout(); router.push('/login'); };
 
 // Dialog functions
 const openCreateDialog = () => {

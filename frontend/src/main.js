@@ -6,11 +6,13 @@ import { useAuth } from './composables/useAuth'
 
 // Views
 import LoginView from './views/LoginView.vue'
+import RegisterView from './views/RegisterView.vue'
 import ProjectsView from './views/ProjectsView.vue'
 import ProjectDetailView from './views/ProjectDetailView.vue'
 import UsersView from './views/UsersView.vue'
 import ArtifactsView from './views/ArtifactsView.vue'
 import ModulesView from './views/ModulesView.vue'
+import ProfileView from './views/ProfileView.vue'
 
 // Router configuration
 const routes = [
@@ -18,6 +20,12 @@ const routes = [
     path: '/login',
     name: 'login',
     component: LoginView,
+    meta: { guest: true }
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: RegisterView,
     meta: { guest: true }
   },
   {
@@ -57,6 +65,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/profile',
+    name: 'profile',
+    component: ProfileView,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/projects'
   }
@@ -69,7 +83,7 @@ const router = createRouter({
 
 // Navigation guards
 router.beforeEach(async (to, from, next) => {
-  const { initAuth, isAuthenticated } = useAuth()
+  const { initAuth, isAuthenticated, isAdmin, isPM, isEngineer } = useAuth()
   
   // Initialize auth state
   await initAuth()
@@ -77,6 +91,9 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAuth && !isAuthenticated.value) {
     next('/login')
   } else if (to.meta.guest && isAuthenticated.value) {
+    next('/projects')
+  } else if (to.name === 'users' && !isAdmin.value) {
+    // Only admin can access users page
     next('/projects')
   } else {
     next()

@@ -45,5 +45,8 @@ class DatabaseSeeder extends Seeder
 
         // Create additional test users
         User::factory(5)->create();
+
+        // Seed project templates
+        $this->call(TemplateSeeder::class);
     }
 }

@@ -1,30 +1,7 @@
 <template>
   <v-app>
-    <v-app-bar color="primary" dark>
-      <v-btn icon @click="goBack">
-        <v-icon>mdi-arrow-left</v-icon>
-      </v-btn>
-      <v-app-bar-title>Modules</v-app-bar-title>
-      <v-spacer></v-spacer>
-      <v-btn icon @click="logout">
-        <v-icon>mdi-logout</v-icon>
-      </v-btn>
-    </v-app-bar>
-
-    <v-navigation-drawer v-model="drawer" app>
-      <v-list dense>
-        <v-list-item prepend-icon="mdi-folder" title="Projects" to="/projects"></v-list-item>
-        <v-list-item prepend-icon="mdi-file-document" title="Artifacts" to="/artifacts"></v-list-item>
-        <v-list-item prepend-icon="mdi-code-braces" title="Modules" to="/modules"></v-list-item>
-        <v-list-item v-if="canManageUsers" prepend-icon="mdi-account-group" title="Users" to="/users"></v-list-item>
-      </v-list>
-      <template v-slot:append>
-        <div class="pa-2">
-          <v-chip>{{ user?.name }}</v-chip>
-          <v-chip color="secondary" class="ml-2">{{ user?.role }}</v-chip>
-        </div>
-      </template>
-    </v-navigation-drawer>
+    <AppToolbar @toggle-drawer="drawer = !drawer" />
+    <AppSidebar v-model="drawer" />
 
     <v-main>
       <v-container>
@@ -176,17 +153,20 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    
+    <AppFooter />
   </v-app>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
 import api from '@/plugins/api';
+import AppToolbar from '@/components/AppToolbar.vue';
+import AppSidebar from '@/components/AppSidebar.vue';
+import AppFooter from '@/components/AppFooter.vue';
 
-const router = useRouter();
-const { user, isAdmin, isPM, logout: authLogout } = useAuth();
+const { isAdmin, isPM } = useAuth();
 
 const drawer = ref(true);
 const loading = ref(false);
@@ -224,7 +204,6 @@ const moduleStatuses = [
 ];
 
 // Permissions
-const canManageUsers = computed(() => isAdmin.value || isPM.value);
 const canEditModules = computed(() => isAdmin.value || isPM.value);
 const canDeleteModules = computed(() => isAdmin.value || isPM.value);
 
@@ -278,9 +257,6 @@ const getProjectName = (projectId) => {
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString();
 };
-
-const goBack = () => router.push('/projects');
-const logout = () => { authLogout(); router.push('/login'); };
 
 const viewModule = (module) => {
   viewingModule.value = module;

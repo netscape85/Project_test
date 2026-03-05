@@ -6,34 +6,55 @@
           <v-col cols="12" sm="8" md="5" lg="4">
             <v-card class="elevation-24 rounded-xl">
               <v-card-text class="pa-8">
-                <div class="text-center mb-8">
+                <div class="text-center mb-6">
                   <v-avatar size="80" color="primary" class="mb-4">
                     <v-icon size="50" color="white">mdi-rocket-launch</v-icon>
                   </v-avatar>
-                  <h1 class="text-h4 font-weight-bold mb-2">TCG Engineering Hub</h1>
-                  <p class="text-subtitle-1 text-grey">Sign in to continue</p>
+                  <h1 class="text-h4 font-weight-bold mb-2">Create Account</h1>
+                  <p class="text-subtitle-1 text-grey">Join TCG Engineering Hub</p>
                 </div>
                 
-                <v-form @submit.prevent="handleLogin">
+                <v-form @submit.prevent="handleRegister" ref="formRef" v-model="formValid">
                   <v-text-field
-                    v-model="email"
+                    v-model="form.name"
+                    label="Full Name"
+                    prepend-inner-icon="mdi-account"
+                    variant="outlined"
+                    required
+                    :rules="[v => !!v || 'Name is required']"
+                    class="mb-2"
+                  ></v-text-field>
+                  
+                  <v-text-field
+                    v-model="form.email"
                     label="Email"
                     prepend-inner-icon="mdi-email"
                     type="email"
                     variant="outlined"
                     required
-                    :error-messages="errors.email"
+                    :rules="[v => !!v || 'Email is required', v => /.+@.+\..+/.test(v) || 'Email must be valid']"
                     class="mb-2"
                   ></v-text-field>
                   
                   <v-text-field
-                    v-model="password"
+                    v-model="form.password"
                     label="Password"
                     prepend-inner-icon="mdi-lock"
                     type="password"
                     variant="outlined"
                     required
-                    :error-messages="errors.password"
+                    :rules="[v => !!v || 'Password is required', v => v.length >= 8 || 'Minimum 8 characters']"
+                    class="mb-2"
+                  ></v-text-field>
+                  
+                  <v-text-field
+                    v-model="form.password_confirmation"
+                    label="Confirm Password"
+                    prepend-inner-icon="mdi-lock-check"
+                    type="password"
+                    variant="outlined"
+                    required
+                    :rules="[v => !!v || 'Confirmation is required', v => v === form.password || 'Passwords must match']"
                     class="mb-4"
                   ></v-text-field>
                   
@@ -48,36 +69,21 @@
                     size="large"
                     block
                     :loading="loading"
+                    :disabled="!formValid"
                     class="mb-4"
                     elevation="2"
                   >
-                    <v-icon left>mdi-login</v-icon>
-                    Sign In
+                    <v-icon left>mdi-account-plus</v-icon>
+                    Register
                   </v-btn>
                   
                   <div class="text-center">
-                    <span class="text-body-2">Don't have an account? </span>
-                    <v-btn variant="text" color="primary" to="/register" size="small">
-                      Register here
+                    <span class="text-body-2">Already have an account? </span>
+                    <v-btn variant="text" color="primary" to="/login" size="small">
+                      Sign in here
                     </v-btn>
                   </div>
                 </v-form>
-                
-                <v-divider class="my-4"></v-divider>
-                
-                <v-card variant="tonal" color="info" class="pa-3">
-                  <div class="text-center">
-                    <v-icon size="small" class="mr-1">mdi-information</v-icon>
-                    <span class="text-caption font-weight-medium">Demo Credentials</span>
-                  </div>
-                  <div class="text-center text-caption mt-2">
-                    <strong>Email:</strong> admin@example.com<br>
-                    <strong>Email:</strong> pm@example.com<br>
-                    <strong>Email:</strong> engineer@example.com<br>
-                    <strong>Email:</strong> viewer@example.com<br>
-                    <strong>Password:</strong> password
-                  </div>
-                </v-card>
               </v-card-text>
             </v-card>
             
@@ -97,29 +103,26 @@ import { useRouter } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
 
 const router = useRouter();
-const { login, loading: authLoading, error: authError } = useAuth();
+const { register, loading: authLoading, error: authError } = useAuth();
 
-const email = ref('admin@example.com');
-const password = ref('password');
-const errors = ref({});
+const formRef = ref(null);
+const formValid = ref(false);
+
+const form = ref({
+  name: '',
+  email: '',
+  password: '',
+  password_confirmation: ''
+});
 
 const loading = computed(() => authLoading.value);
 const error = computed(() => authError.value);
 
-const handleLogin = async () => {
-  errors.value = {};
+const handleRegister = async () => {
+  if (!formValid.value) return;
   
-  if (!email.value) {
-    errors.value.email = 'Email is required';
-    return;
-  }
-  if (!password.value) {
-    errors.value.password = 'Password is required';
-    return;
-  }
-
   try {
-    await login(email.value, password.value);
+    await register(form.value);
     router.push('/');
   } catch (err) {
     // Error is handled in useAuth
@@ -132,4 +135,3 @@ const handleLogin = async () => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 </style>
-

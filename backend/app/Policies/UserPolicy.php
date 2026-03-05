@@ -8,10 +8,11 @@ class UserPolicy
 {
     /**
      * Determine whether the user can view any users.
+     * This is for the users management page, not for listing users to assign.
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole([User::ROLE_ADMIN, User::ROLE_PM]);
+        return $user->isAdmin();
     }
 
     /**
@@ -19,8 +20,8 @@ class UserPolicy
      */
     public function view(User $user, User $targetUser): bool
     {
-        // Admin and PM can view any user
-        if ($user->hasAnyRole([User::ROLE_ADMIN, User::ROLE_PM])) {
+        // Admin can view any user
+        if ($user->isAdmin()) {
             return true;
         }
 
@@ -46,11 +47,6 @@ class UserPolicy
             return true;
         }
 
-        // PM can update users but not admins
-        if ($user->isPM() && !$targetUser->isAdmin()) {
-            return true;
-        }
-
         // Users can update their own profile (but not role)
         return $user->id === $targetUser->id;
     }
@@ -60,17 +56,8 @@ class UserPolicy
      */
     public function delete(User $user, User $targetUser): bool
     {
-        // Admin can delete any user except themselves
-        if ($user->isAdmin() && $user->id !== $targetUser->id) {
-            return true;
-        }
-
-        // PM can delete engineers and viewers
-        if ($user->isPM() && $targetUser->hasAnyRole([User::ROLE_ENGINEER, User::ROLE_VIEWER])) {
-            return true;
-        }
-
-        return false;
+        // Only admin can delete users (except themselves)
+        return $user->isAdmin() && $user->id !== $targetUser->id;
     }
 }
 

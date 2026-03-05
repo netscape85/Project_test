@@ -1,30 +1,7 @@
 <template>
   <v-app>
-    <v-app-bar color="primary" dark>
-      <v-btn icon @click="goBack">
-        <v-icon>mdi-arrow-left</v-icon>
-      </v-btn>
-      <v-app-bar-title>{{ project?.name || 'Project Details' }}</v-app-bar-title>
-      <v-spacer></v-spacer>
-      <v-btn icon @click="logout">
-        <v-icon>mdi-logout</v-icon>
-      </v-btn>
-    </v-app-bar>
-
-    <v-navigation-drawer v-model="drawer" app>
-      <v-list dense>
-        <v-list-item prepend-icon="mdi-folder" title="Projects" to="/projects"></v-list-item>
-        <v-list-item prepend-icon="mdi-file-document" title="Artifacts" to="/artifacts"></v-list-item>
-        <v-list-item prepend-icon="mdi-code-braces" title="Modules" to="/modules"></v-list-item>
-        <v-list-item v-if="canManageUsers" prepend-icon="mdi-account-group" title="Users" to="/users"></v-list-item>
-      </v-list>
-      <template v-slot:append>
-        <div class="pa-2">
-          <v-chip>{{ user?.name }}</v-chip>
-          <v-chip color="secondary" class="ml-2">{{ user?.role }}</v-chip>
-        </div>
-      </template>
-    </v-navigation-drawer>
+    <AppToolbar @toggle-drawer="drawer = !drawer" />
+    <AppSidebar v-model="drawer" />
 
     <v-main>
       <v-container v-if="loading">
@@ -48,10 +25,16 @@
                     {{ project.status }}
                   </v-chip>
                 </div>
-                <v-btn v-if="canEditProjects" color="primary" variant="elevated" @click="editProject">
-                  <v-icon left>mdi-pencil</v-icon>
-                  Edit Project
-                </v-btn>
+                <div class="d-flex gap-2">
+                  <v-btn v-if="canExportProject" color="success" variant="elevated" @click="exportProject">
+                    <v-icon left>mdi-download</v-icon>
+                    Export JSON
+                  </v-btn>
+                  <v-btn v-if="canEditProjects" color="primary" variant="elevated" @click="editProject">
+                    <v-icon left>mdi-pencil</v-icon>
+                    Edit Project
+                  </v-btn>
+                </div>
               </v-card-title>
               <v-card-subtitle class="pa-4">
                 <v-icon size="small" class="mr-1">mdi-account-tie</v-icon>
@@ -467,18 +450,23 @@
         </v-card>
       </v-dialog>
     </v-main>
+    
+    <AppFooter />
   </v-app>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, toRaw } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
 import api from '@/plugins/api';
+import AppToolbar from '@/components/AppToolbar.vue';
+import AppSidebar from '@/components/AppSidebar.vue';
+import AppFooter from '@/components/AppFooter.vue';
 
 const router = useRouter();
 const route = useRoute();
-const { user, isAdmin, isPM, isEngineer, logout: authLogout } = useAuth();
+const { isAdmin, isPM, isEngineer } = useAuth();
 
 const drawer = ref(true);
 const loading = ref(false);
@@ -586,6 +574,7 @@ const moduleStatuses = [
 ];
 
 const canEditProjects = computed(() => isAdmin.value || isPM.value);
+const canExportProject = computed(() => isAdmin.value || isPM.value || isEngineer.value);
 const canManageArtifacts = computed(() => isAdmin.value || isPM.value);
 const canEditArtifacts = computed(() => isAdmin.value || isPM.value);
 const canDeleteArtifacts = computed(() => isAdmin.value || isPM.value);
@@ -593,7 +582,6 @@ const canManageModules = computed(() => isAdmin.value || isPM.value);
 const canEditModules = computed(() => isAdmin.value || isPM.value || isEngineer.value);
 const canDeleteModules = computed(() => isAdmin.value || isPM.value);
 const canValidateModules = computed(() => isAdmin.value || isPM.value);
-const canManageUsers = computed(() => isAdmin.value || isPM.value);
 
 const projectId = computed(() => route.params.id);
 
@@ -721,9 +709,6 @@ const getEventChanges = (event) => {
   return changes.length > 0 ? changes.join('<br>') : null;
 };
 
-const goBack = () => router.push('/projects');
-const logout = () => { authLogout(); router.push('/login'); };
-
 const canModuleBeValidated = (module) => {
   const hasObjective = module.objective && module.objective.trim();
   const hasInputs = module.inputs && Array.isArray(module.inputs) && module.inputs.length >= 1;
@@ -743,6 +728,29 @@ const validateModule = async (module) => {
   } catch (err) {
     console.error('Failed to validate module:', err);
     alert(err.response?.data?.message || 'Failed to validate module');
+  }
+};
+
+const exportProject = async () => {
+  try {
+    console.log('📥 Exporting project:', projectId.value);
+    const response = await api.get(`/projects/${projectId.value}/export`);
+    
+    // Create blob and download
+    const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `project_${project.value.name.replace(/\s+/g, '_')}_export.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    console.log('✅ Project exported successfully');
+  } catch (err) {
+    console.error('❌ Failed to export project:', err);
+    alert('Failed to export project: ' + (err.response?.data?.message || err.message));
   }
 };
 

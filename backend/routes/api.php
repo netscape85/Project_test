@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ArtifactController;
 use App\Http\Controllers\Api\ModuleController;
 use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\Api\ProjectTemplateController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -33,18 +34,28 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/password', [AuthController::class, 'changePassword']);
     });
 
-    // Users routes (for listing users to assign)
-    Route::get('/users/list', function () {
+    // Users list for assignment (accessible by admin, pm, engineer)
+    Route::get('/users/list', function (\Illuminate\Http\Request $request) {
+        $user = $request->user();
+        // Admin, PM, and Engineer can list users for assignment
+        if (!$user->hasAnyRole([\App\Models\User::ROLE_ADMIN, \App\Models\User::ROLE_PM, \App\Models\User::ROLE_ENGINEER])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         return \App\Models\User::select(['id', 'name', 'email', 'role'])->get();
     });
 
     // Users CRUD routes
     Route::apiResource('users', \App\Http\Controllers\Api\UserController::class);
 
+    // Project Templates (optional feature)
+    Route::apiResource('templates', ProjectTemplateController::class)->except(['update']);
+    Route::post('/projects/from-template/{template}', [ProjectTemplateController::class, 'createFromTemplate']);
+
     // Projects routes
     Route::apiResource('projects', ProjectController::class);
     Route::post('/projects/{project}/archive', [ProjectController::class, 'archive']);
     Route::post('/projects/{id}/restore', [ProjectController::class, 'restore']);
+    Route::get('/projects/{project}/export', [ProjectController::class, 'export']);
     
     // Project nested routes (artifacts and modules)
     Route::get('/projects/{project}/artifacts', [ArtifactController::class, 'index']);

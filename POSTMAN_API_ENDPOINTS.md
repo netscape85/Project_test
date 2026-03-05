@@ -1226,3 +1226,410 @@ Todos los cambios importantes generan eventos de auditoría que incluyen:
 - Estado anterior y nuevo
 - Timestamp
 
+
+
+---
+
+## Project Templates (Optional Feature)
+
+### 39. List Templates (Requiere Auth)
+```
+GET /api/templates
+Authorization: Bearer {TOKEN}
+
+Response (200):
+[
+    {
+        "id": 1,
+        "name": "Full Framework Template",
+        "description": "Complete TCG Engineering Framework with all 7 artifacts",
+        "artifact_types": [
+            "strategic_alignment",
+            "big_picture",
+            "domain_breakdown",
+            "module_matrix",
+            "module_engineering",
+            "system_architecture",
+            "phase_scope"
+        ],
+        "created_at": "2024-01-01T00:00:00.000000Z",
+        "updated_at": "2024-01-01T00:00:00.000000Z"
+    },
+    {
+        "id": 2,
+        "name": "Discovery Phase Template",
+        "description": "Template for discovery phase with essential artifacts",
+        "artifact_types": [
+            "strategic_alignment",
+            "big_picture",
+            "domain_breakdown",
+            "module_matrix"
+        ],
+        "created_at": "2024-01-01T00:00:00.000000Z",
+        "updated_at": "2024-01-01T00:00:00.000000Z"
+    }
+]
+```
+
+### 40. Get Template (Requiere Auth)
+```
+GET /api/templates/{id}
+Authorization: Bearer {TOKEN}
+
+Response (200):
+{
+    "id": 1,
+    "name": "Full Framework Template",
+    "description": "Complete TCG Engineering Framework with all 7 artifacts",
+    "artifact_types": [
+        "strategic_alignment",
+        "big_picture",
+        "domain_breakdown",
+        "module_matrix",
+        "module_engineering",
+        "system_architecture",
+        "phase_scope"
+    ],
+    "created_at": "2024-01-01T00:00:00.000000Z",
+    "updated_at": "2024-01-01T00:00:00.000000Z"
+}
+```
+
+### 41. Create Template (Requiere Auth - Admin/PM)
+```
+POST /api/templates
+Authorization: Bearer {TOKEN}
+Content-Type: application/json
+
+Body:
+{
+    "name": "Custom Template",                    // Required
+    "description": "My custom template",          // Optional
+    "artifact_types": [                           // Required: array of artifact types
+        "strategic_alignment",
+        "big_picture",
+        "domain_breakdown"
+    ]
+}
+
+Response (201):
+{
+    "id": 3,
+    "name": "Custom Template",
+    "description": "My custom template",
+    "artifact_types": [
+        "strategic_alignment",
+        "big_picture",
+        "domain_breakdown"
+    ],
+    "created_at": "2024-01-01T00:00:00.000000Z",
+    "updated_at": "2024-01-01T00:00:00.000000Z"
+}
+
+Response (422 - Validation Error):
+{
+    "message": "The given data was invalid.",
+    "errors": {
+        "artifact_types.0": ["The selected artifact_types.0 is invalid."]
+    }
+}
+```
+
+### 42. Delete Template (Requiere Auth - Admin/PM)
+```
+DELETE /api/templates/{id}
+Authorization: Bearer {TOKEN}
+
+Response (200):
+{
+    "message": "Template deleted successfully"
+}
+```
+
+### 43. Create Project from Template (Requiere Auth - Admin/PM)
+```
+POST /api/projects/from-template/{template_id}
+Authorization: Bearer {TOKEN}
+Content-Type: application/json
+
+Body:
+{
+    "name": "New Project from Template",    // Required
+    "client_name": "Client ABC"             // Required
+}
+
+Response (201):
+{
+    "message": "Project created from template",
+    "project": {
+        "id": 5,
+        "name": "New Project from Template",
+        "client_name": "Client ABC",
+        "status": "draft",
+        "created_by": 1,
+        "created_at": "2024-01-01T00:00:00.000000Z",
+        "updated_at": "2024-01-01T00:00:00.000000Z",
+        "artifacts": [
+            {
+                "id": 10,
+                "project_id": 5,
+                "type": "strategic_alignment",
+                "status": "not_started",
+                "owner_user_id": null,
+                "content_json": {},
+                "completed_at": null,
+                "created_at": "2024-01-01T00:00:00.000000Z",
+                "updated_at": "2024-01-01T00:00:00.000000Z"
+            },
+            {
+                "id": 11,
+                "project_id": 5,
+                "type": "big_picture",
+                "status": "not_started",
+                "owner_user_id": null,
+                "content_json": {},
+                "completed_at": null,
+                "created_at": "2024-01-01T00:00:00.000000Z",
+                "updated_at": "2024-01-01T00:00:00.000000Z"
+            }
+        ]
+    }
+}
+```
+
+---
+
+## Export (Optional Feature)
+
+### 44. Export Project to JSON (Requiere Auth - Admin/PM/Engineer)
+```
+GET /api/projects/{id}/export
+Authorization: Bearer {TOKEN}
+
+Response (200):
+{
+    "project": {
+        "name": "Mi Proyecto",
+        "client_name": "Cliente Ejemplo",
+        "status": "execution",
+        "created_at": "2024-01-01T00:00:00.000000Z"
+    },
+    "artifacts": [
+        {
+            "type": "strategic_alignment",
+            "status": "done",
+            "content_json": {
+                "transformation": "Digital transformation",
+                "supported_decisions": ["Decision 1", "Decision 2"],
+                "measurable_success": [
+                    {"metric": "ROI", "target": "150%"}
+                ],
+                "out_of_scope": ["Legacy systems"]
+            },
+            "owner": {
+                "name": "PM User",
+                "email": "pm@example.com"
+            }
+        },
+        {
+            "type": "big_picture",
+            "status": "done",
+            "content_json": {
+                "ecosystem_vision": "Integrated platform",
+                "impacted_domains": ["Finance", "Operations"],
+                "success_definition": "Seamless integration"
+            },
+            "owner": {
+                "name": "Engineer User",
+                "email": "engineer@example.com"
+            }
+        }
+    ],
+    "modules": [
+        {
+            "name": "Payment Module",
+            "domain": "Finance",
+            "status": "validated",
+            "objective": "Process payments securely",
+            "inputs": ["card_data", "amount", "currency"],
+            "outputs": ["transaction_id", "receipt", "status"],
+            "data_structure": "JSON schema for payment data",
+            "logic_rules": "Validate card, check limits, process transaction",
+            "responsibility": "Payment processing team",
+            "failure_scenarios": "Card declined, insufficient funds, network error",
+            "audit_trail_requirements": "Log all transactions with timestamps",
+            "dependencies": ["payment_gateway_api", "fraud_detection_module"],
+            "version_note": "v1.0 - Initial implementation"
+        },
+        {
+            "name": "User Authentication Module",
+            "domain": "Security",
+            "status": "validated",
+            "objective": "Authenticate users securely",
+            "inputs": ["username", "password"],
+            "outputs": ["auth_token", "user_profile"],
+            "data_structure": "User credentials and session data",
+            "logic_rules": "Validate credentials, generate token, manage session",
+            "responsibility": "Security team",
+            "failure_scenarios": "Invalid credentials, account locked, token expired",
+            "audit_trail_requirements": "Log all login attempts",
+            "dependencies": ["user_database", "token_service"],
+            "version_note": "v2.0 - Added MFA support"
+        }
+    ],
+    "exported_at": "2024-01-01T12:00:00+00:00"
+}
+
+Response (403 - Forbidden):
+{
+    "message": "This action is unauthorized."
+}
+```
+
+**Uso del Export:**
+
+Para guardar el export en un archivo:
+```bash
+curl -H "Authorization: Bearer {TOKEN}" \
+  http://localhost:8000/api/projects/1/export \
+  > project_export.json
+```
+
+O en Postman:
+1. Hacer la petición GET
+2. Click en "Save Response" → "Save to a file"
+3. Guardar como `project_export.json`
+
+**Permisos de Export:**
+- ✅ Admin: Puede exportar cualquier proyecto
+- ✅ PM: Puede exportar cualquier proyecto
+- ✅ Engineer: Puede exportar cualquier proyecto
+- ❌ Viewer: No puede exportar
+
+---
+
+## Resumen de Endpoints
+
+### Autenticación (6 endpoints)
+- POST /api/auth/login
+- POST /api/auth/register
+- POST /api/auth/logout
+- GET /api/auth/me
+- PUT /api/auth/profile
+- PUT /api/auth/password
+
+### Users (6 endpoints)
+- GET /api/users
+- GET /api/users/list
+- POST /api/users
+- GET /api/users/{id}
+- PUT /api/users/{id}
+- DELETE /api/users/{id}
+
+### Projects (8 endpoints)
+- GET /api/projects
+- POST /api/projects
+- GET /api/projects/{id}
+- PUT /api/projects/{id}
+- DELETE /api/projects/{id}
+- POST /api/projects/{id}/archive
+- POST /api/projects/{id}/restore
+- GET /api/projects/{id}/export ✨ NEW
+
+### Artifacts (12 endpoints)
+- GET /api/artifacts
+- GET /api/projects/{project_id}/artifacts
+- POST /api/artifacts
+- POST /api/projects/{project_id}/artifacts
+- GET /api/artifacts/{id}
+- PUT /api/artifacts/{id}
+- DELETE /api/artifacts/{id}
+- POST /api/artifacts/{id}/complete
+- POST /api/artifacts/{id}/change-status
+- POST /api/artifacts/{id}/assign
+
+### Modules (11 endpoints)
+- GET /api/modules
+- GET /api/projects/{project_id}/modules
+- POST /api/modules
+- POST /api/projects/{project_id}/modules
+- GET /api/modules/{id}
+- PUT /api/modules/{id}
+- DELETE /api/modules/{id}
+- POST /api/modules/{id}/validate
+- POST /api/modules/{id}/change-status
+
+### Templates (5 endpoints) ✨ NEW
+- GET /api/templates
+- GET /api/templates/{id}
+- POST /api/templates
+- DELETE /api/templates/{id}
+- POST /api/projects/from-template/{template_id}
+
+**Total: 48 endpoints**
+
+---
+
+## Permisos por Rol
+
+### Admin
+- ✅ Todos los endpoints
+- ✅ Gestión completa de usuarios
+- ✅ Crear/editar/eliminar templates
+- ✅ Exportar proyectos
+
+### PM (Project Manager)
+- ✅ Gestionar proyectos
+- ✅ Gestionar artifacts
+- ✅ Gestionar modules
+- ✅ Crear/eliminar templates
+- ✅ Exportar proyectos
+- ✅ Listar usuarios (para asignación)
+- ❌ Gestionar usuarios (CRUD)
+
+### Engineer
+- ✅ Ver proyectos
+- ✅ Ver artifacts
+- ✅ Editar modules
+- ✅ Validar modules
+- ✅ Exportar proyectos
+- ✅ Listar usuarios (para asignación)
+- ❌ Gestionar proyectos
+- ❌ Gestionar artifacts
+- ❌ Gestionar usuarios
+- ❌ Gestionar templates
+
+### Viewer
+- ✅ Ver proyectos
+- ✅ Ver artifacts
+- ✅ Ver modules
+- ❌ Editar cualquier cosa
+- ❌ Exportar proyectos
+- ❌ Gestionar usuarios
+- ❌ Gestionar templates
+
+---
+
+## Notas Finales
+
+1. **Todos los endpoints protegidos requieren el header**: `Authorization: Bearer {TOKEN}`
+
+2. **Los tokens se obtienen del login** y deben guardarse para usarse en peticiones subsecuentes
+
+3. **Los gates/bloqueos** retornan status 422 con información detallada del bloqueo
+
+4. **La paginación** está disponible en endpoints de listado con parámetros `page` y `per_page`
+
+5. **Los filtros y búsquedas** están disponibles en la mayoría de endpoints de listado
+
+6. **El export** genera un JSON completo del proyecto con todos sus artifacts y modules
+
+7. **Los templates** permiten crear proyectos pre-configurados con artifacts específicos
+
+8. **La auditoría** registra automáticamente todos los cambios importantes
+
+---
+
+**Última actualización**: Marzo 2024
+**Versión API**: 1.0
+**Base URL**: http://127.0.0.1:8000/api
