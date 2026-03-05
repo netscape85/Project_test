@@ -6,12 +6,18 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import vuetify from 'vite-plugin-vuetify'
 
 // https://vite.dev/config/
+
 export default defineConfig({
   plugins: [
     vue(),
     vueDevTools(),
     vuetify({ autoImport: true }),
   ],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    allowedHosts: ['test.censa.edu.cu'],
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
